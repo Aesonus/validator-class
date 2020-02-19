@@ -13,6 +13,7 @@ namespace Aesonus\Tests;
 
 use Aesonus\TestLib\BaseTestCase;
 use Aesonus\Validator\AbstractValidator;
+use Aesonus\Validator\ValidatorClassException;
 use Respect\Validation\Validator;
 
 /**
@@ -46,7 +47,7 @@ class AbstractValidatorTest extends BaseTestCase
      */
     public function validatePassesValidData()
     {
-        $actual = $this->testObj->validate(['field' => 'test success']);
+        $actual = $this->testObj->validateAll(['field' => 'test success']);
         $this->assertTrue($actual->passed());
         $this->assertFalse($actual->failed());
     }
@@ -57,7 +58,7 @@ class AbstractValidatorTest extends BaseTestCase
      */
     public function validatorFailsInvalidData($data)
     {
-        $actual = $this->testObj->validate($data);
+        $actual = $this->testObj->validateAll($data);
         $this->assertTrue($actual->failed());
         $this->assertFalse($actual->passed());
     }
@@ -66,9 +67,20 @@ class AbstractValidatorTest extends BaseTestCase
      * @test
      * @dataProvider validatorFailsDataProvider
      */
+    public function validatorThrowsExceptionOnInvalidData($data)
+    {
+        $this->expectException(ValidatorClassException::class);
+        $actual = $this->testObj->validateAll($data);
+        $this->testObj->asserted();
+    }
+
+    /**
+     * @test
+     * @dataProvider validatorFailsDataProvider
+     */
     public function validatorErrorsHaveKeys($data)
     {
-        $actual = $this->testObj->validate($data)->errors()[0];
+        $actual = $this->testObj->validateAll($data)->errors()[0];
         $this->assertArrayContainsValues(['field'], array_keys($actual));
     }
 
@@ -92,12 +104,13 @@ class AbstractValidatorTest extends BaseTestCase
      */
     public function multiRowValidationPassesValidData()
     {
-        $actual = $this->testObj->validate([
+        $actual = $this->testObj->validateAll([
             ['field' => 'test success'],
             ['field' => 'also a success']
         ]);
         $this->assertTrue($actual->passed());
         $this->assertFalse($actual->failed());
+        $this->testObj->asserted();
     }
 
     /**
@@ -105,12 +118,18 @@ class AbstractValidatorTest extends BaseTestCase
      */
     public function multiRowValidationFailsSomeData()
     {
-        $actual = $this->testObj->validate([
+        $actual = $this->testObj->validateAll([
             ['field' => 'ttest success'],
             ['field' => 'a fail^s']
         ]);
         $this->assertTrue($actual->failed());
         $this->assertFalse($actual->passed());
         $this->assertArrayHasKey(1, $actual->errors());
+        try {
+            $this->testObj->asserted();
+        } catch (ValidatorClassException $ex) {
+            $this->assertArrayHasKey(1, $ex->getMessages());
+            $this->assertCount(1, $ex->getMessages(1));
+        }
     }
 }

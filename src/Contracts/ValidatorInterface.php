@@ -26,9 +26,9 @@ interface ValidatorInterface
      * @param array $input
      * @return $this
      */
-    public function validate(array $input): self;
+    public function validateAll(array $input): self;
 
-    /**
+        /**
      * Returns true if validation passed
      * @return bool|null Returns null if no validation has been performed
      */
@@ -39,6 +39,13 @@ interface ValidatorInterface
      * @return bool|null Returns null if no validation has been performed
      */
     public function failed(): ?bool;
+
+    /**
+     * Throws an exception containing all error messages in an easy to process manner
+     * @throws \Aesonus\Validator\ValidatorClassException
+     * @return void
+     */
+    public function asserted(): void;
 
     /**
      * Returns all the errors generated, if any. The output array will be indexed

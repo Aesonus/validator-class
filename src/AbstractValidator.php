@@ -51,7 +51,7 @@ abstract class AbstractValidator implements ValidatorInterface
         return !$this->failed();
     }
 
-    public function validate(array $input): ValidatorInterface
+    public function validateAll(array $input): ValidatorInterface
     {
         $this->hasValidated = true;
         if (empty(array_filter(array_keys($input), 'is_int'))) {
@@ -65,6 +65,15 @@ abstract class AbstractValidator implements ValidatorInterface
             }, array_keys($this->getRules()));
         }
         return $this;
+    }
+
+    public function asserted(): void
+    {
+        if ($this->failed()) {
+            throw new ValidatorClassException(
+                json_encode($this->errors(), JSON_PRETTY_PRINT
+            ));
+        }
     }
 
     private function assert($index, $field, $input)
