@@ -1,0 +1,22 @@
+{
+    "name": "aesonus/validator-class",
+    "description": "Provides a class which outputs validation errors in an associative array",
+    "authors": [
+        {
+            "name": "Aesonus",
+            "email": "corylcomposinger@gmail.com"
+        }
+    ],
+    "require": {
+        "respect/validation": "^1.1"
+    },
+    "require-dev": {
+        "aesonus/test-lib": "v3.1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Aesonus\\Validator\\": "src/",
+            "Aesonus\\Tests\\": "tests/"
+        }
+    }
+}
