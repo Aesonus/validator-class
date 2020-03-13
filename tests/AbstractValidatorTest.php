@@ -36,6 +36,7 @@ class AbstractValidatorTest extends BaseTestCase
             {
                 return [
                     'field' => Validator::alnum()->length(3, 64),
+                    'numbers' => Validator::numeric(),
                 ];
             }
         };
@@ -47,9 +48,26 @@ class AbstractValidatorTest extends BaseTestCase
      */
     public function validatePassesValidData()
     {
-        $actual = $this->testObj->validateAll(['field' => 'test success']);
+        $actual = $this->testObj->validateAll([
+            'field' => 'test success',
+            'numbers' => '42',
+            ]);
         $this->assertTrue($actual->passed());
         $this->assertFalse($actual->failed());
+    }
+
+    /**
+     * @test
+     */
+    public function validatorExceptionHasPassedField()
+    {
+        try {
+            $this->testObj->validateAll([
+                'field' => 'test success', 'numbers' => 'fail'
+            ])->asserted();
+        } catch (ValidatorClassException $ex) {
+            $this->assertArrayContainsValues(['field'], $ex->getPassedFields(0));
+        }
     }
 
     /**
@@ -81,7 +99,37 @@ class AbstractValidatorTest extends BaseTestCase
     public function validatorErrorsHaveKeys($data)
     {
         $actual = $this->testObj->validateAll($data)->errors()[0];
-        $this->assertArrayContainsValues(['field'], array_keys($actual));
+        $this->assertArrayContainsValues(['field', 'numbers'], array_keys($actual));
+    }
+
+    /**
+     * @test
+     * @dataProvider validatorFailsDataProvider
+     */
+    public function validatorExceptionErrorsHaveKeys($data)
+    {
+        $this->testObj->validateAll($data);
+        try {
+            $this->testObj->asserted();
+        } catch (ValidatorClassException $ex) {
+            $actual = $ex->getMessages(0);
+            $this->assertArrayContainsValues(['field','numbers'], array_keys($actual));
+        }
+    }
+
+    /**
+     * @test
+     * @dataProvider validatorFailsDataProvider
+     */
+    public function validatorExceptionHasNoPassedFields($data)
+    {
+        $this->testObj->validateAll($data);
+        try {
+            $this->testObj->asserted();
+        } catch (ValidatorClassException $ex) {
+            $actual = $ex->getPassedFields(0);
+            $this->assertEmpty($actual);
+        }
     }
 
     /**
@@ -91,10 +139,12 @@ class AbstractValidatorTest extends BaseTestCase
     {
         return [
             [[
-                'field' => 'f'
+                'field' => 'f',
+                'numbers' => 'failure',
             ]],
             [[
-                'field' => 'ret$#%'
+                'field' => 'ret$#%',
+                'numbers' => 'also failure'
             ]]
         ];
     }
@@ -105,8 +155,8 @@ class AbstractValidatorTest extends BaseTestCase
     public function multiRowValidationPassesValidData()
     {
         $actual = $this->testObj->validateAll([
-            ['field' => 'test success'],
-            ['field' => 'also a success']
+            ['field' => 'test success', 'numbers' => 42],
+            ['field' => 'also a success', 'numbers' => 69]
         ]);
         $this->assertTrue($actual->passed());
         $this->assertFalse($actual->failed());
@@ -129,7 +179,29 @@ class AbstractValidatorTest extends BaseTestCase
             $this->testObj->asserted();
         } catch (ValidatorClassException $ex) {
             $this->assertArrayHasKey(1, $ex->getMessages());
+            $this->assertCount(2, $ex->getMessages(1));
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function multiRowValidationExceptionHasPassedField()
+    {
+        $actual = $this->testObj->validateAll([
+            ['field' => 'ttest success', 'numbers' => array()],
+            ['field' => 'another success', 'numbers' => 'fail']
+        ]);
+        $this->assertTrue($actual->failed());
+        $this->assertFalse($actual->passed());
+        $this->assertArrayHasKey(1, $actual->errors());
+        try {
+            $this->testObj->asserted();
+        } catch (ValidatorClassException $ex) {
+            $this->assertArrayHasKey(1, $ex->getMessages());
             $this->assertCount(1, $ex->getMessages(1));
+            $this->assertArrayHasKey(1, $ex->getPassedFields());
+            $this->assertArrayContainsAtLeastValues(['field'], $ex->getPassedFields(1));
         }
     }
 }

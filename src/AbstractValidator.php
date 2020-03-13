@@ -28,6 +28,12 @@ abstract class AbstractValidator implements ValidatorInterface
      */
     protected $errors;
 
+    /**
+     *
+     * @var ?array
+     */
+    protected $passedFields;
+
     private $hasValidated = false;
 
     public function errors(): ?array
@@ -71,7 +77,10 @@ abstract class AbstractValidator implements ValidatorInterface
     {
         if ($this->failed()) {
             throw new ValidatorClassException(
-                json_encode($this->errors(), JSON_PRETTY_PRINT
+                json_encode([
+                    'errors' => $this->errors(),
+                    'passed' => $this->passedFields,
+                    ], JSON_PRETTY_PRINT
             ));
         }
     }
@@ -84,6 +93,7 @@ abstract class AbstractValidator implements ValidatorInterface
                 $rules[$field]->setName(ucwords(str_replace('_', ' ', $field)));
             }
             $rules[$field]->assert($input);
+            $this->passedFields[$index][] = $field;
         } catch (NestedValidationException $exc) {
             $this->errors[$index][$field] = $exc->getMessages();
         }

@@ -24,10 +24,32 @@ class ValidatorClassException extends \RuntimeException
      */
     protected $messages;
 
+    /**
+     *
+     * @var array
+     */
+    protected $passedFields;
+
     public function __construct(string $message = "", int $code = 0, \Throwable $previous = NULL)
     {
         parent::__construct($message, $code, $previous);
-        $this->messages = json_decode($message, true);
+        $msg = json_decode($message, true);
+        $this->messages = $msg['errors'];
+        $this->passedFields = $msg['passed'];
+    }
+
+    public function getPassedFields(?int $row_index = null): array
+    {
+        if (isset($row_index)) {
+            return $this->passedFields[$row_index] ?? [];
+        } else {
+            return $this->getAllPassedFields();
+        }
+    }
+
+    private function getAllPassedFields(): array
+    {
+        return $this->passedFields ?? [];
     }
 
     /**
